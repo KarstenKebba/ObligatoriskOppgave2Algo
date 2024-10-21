@@ -22,6 +22,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
 
+/**
+ * Hovedapplikasjonen for å generere ord basert på trigrammer
+ */
 public class GenerereOrdApp extends Application {
 
     private Map<String, Map<String, Integer>> trigramMap = new HashMap<>();
@@ -34,6 +37,12 @@ public class GenerereOrdApp extends Application {
     final int MAX_WORD_COUNT = 10000;
     TextArea generatedWords = new TextArea();
 
+    /**
+     * Start metoden for JavaFX application.
+     *
+     * @param stage Hovedscnene for Applikasjonen
+     * @throws IOException Hvis det oppstår en feil ved lasting av dataen.
+     */
 
     @Override
     public void start(Stage stage) throws IOException {
@@ -54,11 +63,14 @@ public class GenerereOrdApp extends Application {
         stage.setTitle("A failed Turing test");
         stage.setScene(scene);
         stage.show();
-
-
-
-
     }
+
+    /**
+     * Metode for å lage en pane for å skrive inn ord.
+     *
+     * @return Promt panelet.
+     * @throws IOException Hvis det oppstår en feil ved lasting av dataen.
+     */
 
     public Pane promtPane() throws IOException {
         promtPane = new Pane();
@@ -90,6 +102,12 @@ public class GenerereOrdApp extends Application {
         return promtPane;
     }
 
+    /**
+     * Metode for å generere en pane for å vise genererte ord.
+     *
+     * @return Genererte ord panelet.
+     */
+
     public Pane genPane() {
 
         genPane = new Pane();
@@ -114,6 +132,11 @@ public class GenerereOrdApp extends Application {
         return genPane;
     }
 
+    /**
+     * Metode for å generere en pane for å vise kildene.
+     *
+     * @return Kilde panelet.
+     */
     public Pane sourcePane() {
         sourcePane = new Pane();
         sourcePane.setPrefWidth(width/4);
@@ -143,7 +166,12 @@ public class GenerereOrdApp extends Application {
 
         return sourcePane;
     }
-
+    /**
+     * Metode for å generere en pane for å vise antall ord og trigrammer.
+     *
+     * @return Count panelet.
+     * @throws IOException Hvis det oppstår en feil ved lasting av dataen.
+     */
     public Pane countPane() throws IOException {
 
         countPane = new Pane();
@@ -169,6 +197,12 @@ public class GenerereOrdApp extends Application {
 
         return countPane;
     }
+    /**
+     * Metode for å laste lenker fra en ressurs.
+     *
+     * @param resourcePath Stien til ressursen.
+     * @throws IOException Hvis det oppstår en feil ved lasting av dataen.
+     */
 
     private void loadLinksFromResource(String resourcePath) throws IOException {
         InputStream inputStream = getClass().getResourceAsStream(resourcePath);
@@ -189,6 +223,14 @@ public class GenerereOrdApp extends Application {
         }
 
     }
+
+    /**
+     * Metode for å laste tekst fra en URL.
+     * 
+     * @param url URLen til teksten.
+     * @throws IOException Hvis det oppstår en feil ved lasting av dataen.
+     */
+
     private void loadTextFromUrl(String url) throws IOException {
         // Hent dokumentet fra nettsiden
         Document doc = Jsoup.connect(url).get();
@@ -200,7 +242,11 @@ public class GenerereOrdApp extends Application {
         buildTrigramMap(text);
     }
 
-    // Metode for å bygge en trigram-map basert på teksten
+    /**
+     * Metode for å bygge trigrammer fra en tekst.
+     * @param text Teksten som skal brukes til å bygge trigrammer.
+     */
+
     private void buildTrigramMap(String text) {
         // Bruker regex for å fange både ord, tall og spesialtegn som punktum og komma
         StringTokenizer tokenizer = new StringTokenizer(text, " \t\n\r\f");
@@ -231,15 +277,21 @@ public class GenerereOrdApp extends Application {
             wordCounter++;
         }
     }
-
-    // Normaliserer ord (fjerner ikke Æ, Ø, Å eller tall, teller punktum og komma som egne ord)
+    /**
+     * Metode for å normalisere et ord.
+     * @param word Ordet som skal normaliseres.
+     * @return Det normaliserte ordet.
+     */
     private String normalizeWord(String word) {
         // Regex som beholder bokstaver, Æ, Ø, Å, tall, punktum, komma og bindestrek
         return word.replaceAll("[^a-zA-ZæøåÆØÅ0-9.,-]", "");
     }
 
 
-
+    /**
+     * Metode for å fortsette å skrive basert på trigrammer.
+     * @param words Ordet som skal brukes til å fortsette skrivingen.
+     */
 
     private void continueWriting(String[] words) {
         int wordCount = words.length;
@@ -263,6 +315,12 @@ public class GenerereOrdApp extends Application {
             word2 = nextWord;
         }
     }
+    /**
+     * Metode for å hente et tilfeldig tredje ord basert på sannsynligheten.
+     * @param word1 Første ord.
+     * @param word2 Andre ord.
+     * @return Det tilfeldige tredje ordet.
+     */
 
     private String getRandomThirdWord(String word1, String word2) {
         String trigramKey = word1 + " " + word2;
@@ -287,7 +345,10 @@ public class GenerereOrdApp extends Application {
         return null;
     }
 
-
+    /**
+     * Main metoden for å starte applikasjonen.
+     * @param args
+     */
 
     public static void main(String[] args) {
         launch();
