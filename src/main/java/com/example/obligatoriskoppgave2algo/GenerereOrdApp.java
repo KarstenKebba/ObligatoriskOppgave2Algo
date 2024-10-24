@@ -1,7 +1,6 @@
 package com.example.obligatoriskoppgave2algo;
 
 import javafx.application.Application;
-import javafx.fxml.FXMLLoader;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -24,6 +23,7 @@ import java.util.StringTokenizer;
 
 /**
  * Hovedapplikasjonen for å generere ord basert på trigrammer
+ * og vise kilder og antall ord og trigrammer.
  */
 public class GenerereOrdApp extends Application {
 
@@ -34,8 +34,8 @@ public class GenerereOrdApp extends Application {
     int wordCounter = 2;
     int trioTeller = 0;
     ArrayList<String> kilder = new ArrayList<>();
-    final int MAX_WORD_COUNT = 10000;
-    TextArea generatedWords = new TextArea();
+    final int MAX = 10000;
+    TextArea genererOrd = new TextArea();
 
     /**
      * Start metoden for JavaFX application.
@@ -47,17 +47,21 @@ public class GenerereOrdApp extends Application {
     @Override
     public void start(Stage stage) throws IOException {
 
-        // Last inn trigrammer fra data.txt ved oppstart
+        //prøve å laste inn all tekst fra linkene i data.txt
         try {
-            loadLinksFromResource("/data.txt");
+            hentData("/data.txt");
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        //setter opp layoutet ved hjelp av metodekall til de forskjellige pane'ene
 
         bp.setTop(promtPane());
         bp.setCenter(genPane());
         bp.setRight(sourcePane());
         bp.setBottom(countPane());
+
+        //setter opp scenen og viser den
 
         Scene scene = new Scene(bp, width, height);
         stage.setTitle("A failed Turing test");
@@ -81,6 +85,9 @@ public class GenerereOrdApp extends Application {
         HBox input = new HBox();
         input.setSpacing(10);
 
+        //vi fant en annen metode som automatisk skrivde videre basert på det vi startet med i et textfelt som var litt kulere,
+        //vi forstod ikke koden nokk til å implementere det i vår egen versjon siden det var chatgpt kode
+
         Label prompt1 = new Label("Enter a word: ");
         TextField word1 = new TextField();
         Label prompt2 = new Label("Enter a second word: ");
@@ -93,9 +100,9 @@ public class GenerereOrdApp extends Application {
 
         generate.setOnAction(e -> {
             String[] words = {word1.getText(), word2.getText()};
-            generatedWords.clear();
-            generatedWords.appendText(words[0] + " " + words[1]);
-            continueWriting(words);
+            genererOrd.clear();
+            genererOrd.appendText(words[0] + " " + words[1]);
+            autoSkriv(words);
         });
 
 
@@ -121,12 +128,12 @@ public class GenerereOrdApp extends Application {
 
         Label generated = new Label("Generated words: ");
 
-        generatedWords.setWrapText(true);
-        generatedWords.setEditable(false);
-        generatedWords.setPrefHeight(550);
-        generatedWords.setPrefWidth(700);
+        genererOrd.setWrapText(true);
+        genererOrd.setEditable(false);
+        genererOrd.setPrefHeight(550);
+        genererOrd.setPrefWidth(700);
 
-        gen.getChildren().addAll(generated, generatedWords);
+        gen.getChildren().addAll(generated, genererOrd);
         genPane.getChildren().add(gen);
 
         return genPane;
@@ -156,7 +163,7 @@ public class GenerereOrdApp extends Application {
         sources.setPrefWidth(200);
 
         for (String item : kilder) {
-            sources.appendText(item + "\n");  // Legg til hver streng med en ny linje
+            sources.appendText(item + "\n");  // det er for å legge til en linje etter hver link
         }
 
 
@@ -172,6 +179,7 @@ public class GenerereOrdApp extends Application {
      * @return Count panelet.
      * @throws IOException Hvis det oppstår en feil ved lasting av dataen.
      */
+    // dette er egentlig bare bonus som henger igjen etter vi prøvde ut måter å laste inn text fra nettsider
     public Pane countPane() throws IOException {
 
         countPane = new Pane();
@@ -198,16 +206,16 @@ public class GenerereOrdApp extends Application {
         return countPane;
     }
     /**
-     * Metode for å laste lenker fra en ressurs.
+     * Metode for å laste lenker fra en .txt fil.
      *
-     * @param resourcePath Stien til ressursen.
+     * @param resourcePath Stien til .txt filen.
      * @throws IOException Hvis det oppstår en feil ved lasting av dataen.
      */
-
-    private void loadLinksFromResource(String resourcePath) throws IOException {
+    // her startet vi med en måte for bruker å skrive inn lenken som så ble til fil avlesning fra et txt dokument istedet
+    private void hentData(String resourcePath) throws IOException {
         InputStream inputStream = getClass().getResourceAsStream(resourcePath);
         if (inputStream == null) {
-            throw new FileNotFoundException("Ressursen " + resourcePath + " ble ikke funnet.");
+            throw new FileNotFoundException("Dataen du ser etter ( " + resourcePath + ") er i et annet slott.");
         }
 
         try (BufferedReader br = new BufferedReader(new InputStreamReader(inputStream))) {
@@ -215,9 +223,11 @@ public class GenerereOrdApp extends Application {
             while ((line = br.readLine()) != null) {
                 line = line.trim();
                 if (!line.isEmpty()) {
-                    // Last ned tekst fra hver lenke
-                    loadTextFromUrl(line);
+                    // Last ned teksten fra hver lenke
+                    urlTilTekst(line);
                     kilder.add(line);
+                    //her lagde vi en litt rar løsning for å sjekke hvilke kilder som ble lastet inn
+                    //og gjorde testen om til en del av proskjektet
                 }
             }
         }
@@ -230,8 +240,8 @@ public class GenerereOrdApp extends Application {
      * @param url URLen til teksten.
      * @throws IOException Hvis det oppstår en feil ved lasting av dataen.
      */
-
-    private void loadTextFromUrl(String url) throws IOException {
+    // dette her får vi fra Jsoup og fra youtube video om hvordan bruke det
+    private void urlTilTekst(String url) throws IOException {
         // Hent dokumentet fra nettsiden
         Document doc = Jsoup.connect(url).get();
 
@@ -239,39 +249,40 @@ public class GenerereOrdApp extends Application {
         String text = doc.text();
 
         // Behandle teksten og bygge trigrammer
-        buildTrigramMap(text);
+        triagramMap(text);
     }
 
     /**
      * Metode for å bygge trigrammer fra en tekst.
      * @param text Teksten som skal brukes til å bygge trigrammer.
      */
+    //her er noe som vi ikke har brukt før men som vi fant på nettet og tilpasset til vårt prosjekt
+    //vi kunne brukt Split men siden denne metoden lot oss forstå delimiteren bedre så valgte vi denne
+    private void triagramMap(String text) {
 
-    private void buildTrigramMap(String text) {
-        // Bruker regex for å fange både ord, tall og spesialtegn som punktum og komma
         StringTokenizer tokenizer = new StringTokenizer(text, " \t\n\r\f");
+        //her er det en regex som splitter på mellomrom, tab, new line, carriage return og form feed
 
         String word1 = null, word2 = null;
 
-        // Iterer over alle ordene i teksten
         while (tokenizer.hasMoreTokens()) {
             String word3 = tokenizer.nextToken();
 
-            // Normaliser ordet, behold Æ, Ø, Å, tall og skilletegn
+            // "Normaliser" ordet, behold Æ, Ø, Å, tall og skilletegn
             word3 = normalizeWord(word3);
 
-            // Sjekk at alle tre ordene er gyldige og ikke tomme før du bygger trigrammet
+            // Sjekk at alle tre ordene er gyldige og ikke tomme før vi bygger trigrammet
             if (word1 != null && word2 != null && !word1.isEmpty() && !word2.isEmpty() && !word3.isEmpty()) {
                 String trigramKey = word1 + " " + word2;
 
-                // Legg til det tredje ordet i trigramMap
+                // Legg til det tredje ordet i trigramMap og øke telleren
                 trigramMap.putIfAbsent(trigramKey, new HashMap<>());
                 trioTeller++;
                 Map<String, Integer> thirdWordMap = trigramMap.get(trigramKey);
                 thirdWordMap.put(word3, thirdWordMap.getOrDefault(word3, 0) + 1);
             }
 
-            // Flytt ordene fremover for å lage neste trigram
+            // Flytt ordene fremover for å gjøre det igjen, og øk ordtelleren
             word1 = word2;
             word2 = word3;
             wordCounter++;
@@ -284,6 +295,7 @@ public class GenerereOrdApp extends Application {
      */
     private String normalizeWord(String word) {
         // Regex som beholder bokstaver, Æ, Ø, Å, tall, punktum, komma og bindestrek
+        // vi syntes det var lettere å si hva vi skulle beholde istedet for å si hva vi skulle fjerne
         return word.replaceAll("[^a-zA-ZæøåÆØÅ0-9.,-]", "");
     }
 
@@ -292,20 +304,21 @@ public class GenerereOrdApp extends Application {
      * Metode for å fortsette å skrive basert på trigrammer.
      * @param words Ordet som skal brukes til å fortsette skrivingen.
      */
-
-    private void continueWriting(String[] words) {
+    //her har vi bare en måte å få programmet til å fortsette basert på de to siste ordene så vi ikke bare får ett og ett ord
+    //det bare autogenererer ord basert på de to siste ordene
+    private void autoSkriv(String[] words) {
         int wordCount = words.length;
         String word1 = normalizeWord(words[words.length - 2]);
         String word2 = normalizeWord(words[words.length - 1]);
 
         // Fortsett å legge til ord til det ikke finnes trigram eller vi når 1000 ord
-        while (wordCount < MAX_WORD_COUNT) {
-            String nextWord = getRandomThirdWord(word1, word2);
+        while (wordCount < MAX) {
+            String nextWord = tredjeOrd(word1, word2);
             if (nextWord == null) {
-                break;  // Stopp hvis det ikke finnes flere trigrammer
+                break;  // Stopp hvis programmet ikke finner flere trigrammer
             }
 
-            generatedWords.appendText(" " + nextWord);
+            genererOrd.appendText(" " + nextWord);
             wordCount++;
 
 
@@ -322,22 +335,22 @@ public class GenerereOrdApp extends Application {
      * @return Det tilfeldige tredje ordet.
      */
 
-    private String getRandomThirdWord(String word1, String word2) {
+    private String tredjeOrd(String word1, String word2) {
         String trigramKey = word1 + " " + word2;
-        Map<String, Integer> thirdWordMap = trigramMap.get(trigramKey);
+        Map<String, Integer> alleMulige = trigramMap.get(trigramKey);
 
-        if (thirdWordMap == null) {
+        if (alleMulige == null) {
             return null;
         }
 
         // Velg et tilfeldig tredje ord basert på sannsynligheten
-        int totalOccurrences = thirdWordMap.values().stream().mapToInt(Integer::intValue).sum();
-        int randomIndex = (int) (Math.random() * totalOccurrences);
+        int antallBruk = alleMulige.values().stream().mapToInt(Integer::intValue).sum();
+        int trekkTall = (int) (Math.random() * antallBruk);
 
         int sum = 0;
-        for (Map.Entry<String, Integer> entry : thirdWordMap.entrySet()) {
+        for (Map.Entry<String, Integer> entry : alleMulige.entrySet()) {
             sum += entry.getValue();
-            if (randomIndex < sum) {
+            if (trekkTall < sum) {
                 return entry.getKey();
             }
         }
